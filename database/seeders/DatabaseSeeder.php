@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash; // <-- Wajib dipanggil untuk mengenkripsi password
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,11 +16,24 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // =========================================================================
+        // FIX SAKTI: SEEDER OTOMATISASI DUA ROLE AKUN UNTUK TESTING TIM KELOMPOK
+        // =========================================================================
+        
+        // 1. Membuat Akun Admin Utama Kelompok Day-Rent
+        User::create([
+            'name' => 'Admin DayRent',
+            'email' => 'admin@dayrent.test',        // Email Login Admin
+            'password' => Hash::make('password123'), // Password Login Admin
+            'role' => 'admin',                       // KUNCI: Set langsung jadi admin agar lolos middleware
+        ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // 2. Membuat Akun User Biasa untuk simulasi pengajuan sewa unit
+        User::create([
+            'name' => 'Muhammad Ridho Ichsani',
+            'email' => 'user@dayrent.test',         // Email Login User
+            'password' => Hash::make('password123'), // Password Login User
+            'role' => 'user',                        // Set jadi user biasa
         ]);
     }
 }
