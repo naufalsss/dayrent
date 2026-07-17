@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash; // <-- Wajib dipanggil untuk mengenkripsi password
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
 
         // 2. Membuat Akun User Biasa untuk simulasi pengajuan sewa unit
         User::create([
-            'name' => 'Muhammad Ridho Ichsani',
+            'name' => 'Mohammad Naufal Murfid',
             'email' => 'user@dayrent.test',         // Email Login User
             'password' => Hash::make('password123'), // Password Login User
             'role' => 'user',                        // Set jadi user biasa

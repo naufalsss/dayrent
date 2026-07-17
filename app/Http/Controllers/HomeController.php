@@ -47,8 +47,32 @@ class HomeController extends Controller
         // Simulasikan data dari tabel 'categories' sesuai proposal universal rental kalian
         $categories = Category::latest()->get();
 
-        // Simulasikan data dari tabel 'items' (Objek Rental Universal)
-        $items = Item::with('category')->latest()->get();
+        // =========================================================================
+        // FIX STEP 6: QUERY DINAMIS TOP ITEMS DARI KESELURUHAN MERCHANT
+        // =========================================================================
+        // 1. Ambil ID Item yang paling banyak disewa dari tabel rentals (status approved & returned)
+        $topItemIds = DB::table('rentals')
+            ->select('item_id', DB::raw('count(*) as total_sewa'))
+            ->whereIn('status', ['approved', 'returned'])
+            ->groupBy('item_id')
+            ->orderBy('total_sewa', 'desc')
+            ->limit(8) // Batasi mengambil 8 item terpopuler untuk halaman depan
+            ->pluck('item_id')
+            ->toArray();
+
+        // 2. Jika ada data transaksi, ambil item berdasarkan urutan popularitas sewa
+        if (!empty($topItemIds)) {
+            // Menggunakan field() agar urutan item tetap sama sesuai rank popularitas sewa
+            $idsOrder = implode(',', $topItemIds);
+            $items = Item::with('category')
+                ->whereIn('id', $topItemIds)
+                ->orderByRaw("FIELD(id, {$idsOrder})")
+                ->get();
+        } else {
+            // Fallback: Jika web baru dan belum ada transaksi sewa sama sekali, tampilkan barang terbaru
+            $items = Item::with('category')->latest()->limit(8)->get();
+        }
+        // =========================================================================
 
         // Tarik data promo dinamis untuk slider bawah
         $promos = Promo::latest()->get();
@@ -62,7 +86,7 @@ class HomeController extends Controller
         $item = Item::with('category')->findOrFail($id);
         
         // Ambil config aplikasi
-        $configs = \DB::table('cms_configs')->pluck('value', 'key')->toArray();
+        $configs = DB::table('cms_configs')->pluck('value', 'key')->toArray();
 
         return view('checkout', compact('item', 'configs'));
     }

@@ -12,9 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Daftarkan alias nama middleware satpam kita di sini dengan format string murni yang rapi
         $middleware->alias([
             'admin' => 'App\Http\Middleware\IsAdmin', 
+            'merchant' => 'App\Http\Middleware\IsMerchant',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

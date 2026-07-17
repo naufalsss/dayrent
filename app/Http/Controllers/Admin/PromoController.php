@@ -7,7 +7,7 @@ use App\Models\Item;
 use App\Models\Category;
 use App\Models\Promo;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage; // <-- WAJIB IMPORT INI BREE
+use Illuminate\Support\Facades\Storage;
 
 class PromoController extends Controller
 {
@@ -22,16 +22,15 @@ class PromoController extends Controller
 
     public function store(Request $request)
     {
+        // FIX: Hapus kewajiban item_id, ganti dengan validasi link_url yang dikirim front-end
         $request->validate([
             'tag' => 'required|string|max:255',
             'title' => 'required|string|max:255',
             'badge_color' => 'required|string',
             'link_text' => 'required|string|max:255',
-            'item_id' => 'required|exists:items,id',
-            'background_image' => 'required|image|mimes:jpeg,png,jpg|max:2048', // Max 2MB
+            'link_url' => 'required|string|max:255', // <-- Membaca dynamic link hasil racikan JS
+            'background_image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
         ]);
-
-        $item = Item::findOrFail($request->item_id);
 
         // Logic Upload Foto Background
         $imagePath = null;
@@ -44,8 +43,8 @@ class PromoController extends Controller
             'title' => $request->title,
             'badge_color' => $request->badge_color,
             'link_text' => $request->link_text,
-            'link_url' => '/items/' . $item->id . '/checkout',
-            'image' => $imagePath, // <-- Simpan path foto ke database (sesuaikan nama kolom tabel lu, misal 'image' atau 'background_image')
+            'link_url' => $request->link_url, // <-- FIX: Mengambil nilai murni dari front-end
+            'image' => $imagePath,
         ]);
 
         return redirect()->back()->with('success', 'Promo Slider dengan background custom berhasil didaftarkan! 📸');
@@ -53,27 +52,23 @@ class PromoController extends Controller
 
     public function update(Request $request, $id)
     {
+        // FIX: Longgarkan item_id agar link kategori bisa disimpan tanpa hambatan
         $request->validate([
             'tag' => 'required|string|max:255',
             'title' => 'required|string|max:255',
             'badge_color' => 'required|string',
             'link_text' => 'required|string|max:255',
-            'item_id' => 'required|exists:items,id',
-            'background_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048', // Nullable pas edit
+            'link_url' => 'required|string|max:255', // <-- FIX: Validasi dynamic link target
+            'background_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         $promo = Promo::findOrFail($id);
-        $item = Item::findOrFail($request->item_id);
+        $imagePath = $promo->image;
 
-        $imagePath = $promo->image; // Pakai foto lama dulu
-
-        // Jika admin upload foto baru pas edit
         if ($request->hasFile('background_image')) {
-            // Hapus foto lama dari storage biar gak numpuk sampah
             if ($promo->image && Storage::disk('public')->exists($promo->image)) {
                 Storage::disk('public')->delete($promo->image);
             }
-            // Simpan foto baru
             $imagePath = $request->file('background_image')->store('promos', 'public');
         }
 
@@ -82,7 +77,7 @@ class PromoController extends Controller
             'title' => $request->title,
             'badge_color' => $request->badge_color,
             'link_text' => $request->link_text,
-            'link_url' => '/items/' . $item->id . '/checkout', 
+            'link_url' => $request->link_url, // <-- FIX: Mengupdate sesuai link_url pilihan terupdate
             'image' => $imagePath,
         ]);
 
@@ -93,7 +88,6 @@ class PromoController extends Controller
     {
         $promo = Promo::findOrFail($id);
 
-        // Hapus file foto dari storage sebelum datanya dihapus dari DB
         if ($promo->image && Storage::disk('public')->exists($promo->image)) {
             Storage::disk('public')->delete($promo->image);
         }

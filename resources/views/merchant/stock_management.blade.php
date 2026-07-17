@@ -1,4 +1,4 @@
-@extends('admin.master')
+@extends('merchant.master')
 
 @section('content')
     @if(session('success'))
@@ -11,7 +11,7 @@
         
         <div class="pb-4 border-b border-slate-100 mb-5">
             <h4 class="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Manajemen Stok Barang</h4>
-            <p class="text-[11px] text-slate-400 font-medium mt-1">Atur kuantitas sisa unit rental secara real-time tanpa mengganggu data master barang.</p>
+            <p class="text-[11px] text-slate-400 font-medium mt-1">Atur kuantitas sisa unit rental secara real-time khusus barang dagangan toko lu.</p>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 mb-6">
@@ -42,16 +42,14 @@
                 <tbody id="stockTableBody" class="text-xs font-medium text-slate-600 divide-y divide-slate-100">
                     @forelse($items as $item)
                         <tr class="stock-row hover:bg-slate-50/40 transition duration-100" data-name="{{ strtolower($item->name) }}" data-category="{{ strtolower($item->category_name) }}">
-                            
                             <td class="py-3 px-5 flex items-center gap-3">
-                                <img src="{{ asset($item->image) }}" class="w-10 h-10 object-cover rounded-xl border border-slate-100 shadow-sm">
+                                <img src="{{ (str_starts_with($item->image, '/storage/') || str_starts_with($item->image, 'storage/')) ? asset(ltrim($item->image, '/')) : asset('storage/' . $item->image) }}" 
+                                     class="w-10 h-10 object-cover rounded-xl border border-slate-100 shadow-sm">
                                 <span class="font-bold text-slate-800">{{ $item->name }}</span>
                             </td>
-                            
                             <td class="py-3 px-5 text-slate-400 uppercase text-[10px] tracking-wider">{{ $item->category_name }}</td>
-                            
                             <td class="py-3 px-5 text-center">
-                                <form method="POST" action="{{ route('admin.stock.update', $item->id) }}" class="flex items-center justify-center gap-2">
+                                <form method="POST" action="{{ route('merchant.stock.update', $item->id) }}" class="flex items-center justify-center gap-2">
                                     @csrf
                                     <input type="number" name="stock" value="{{ $item->stock ?? 0 }}" 
                                     class="w-16 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-center text-xs font-bold text-slate-800 focus:border-blue-600 focus:bg-white outline-none transition" min="0">
@@ -60,9 +58,8 @@
                                     </button>
                                 </form>
                             </td>
-
                             <td class="py-3 px-5 text-center">
-                                <form method="POST" action="{{ route('admin.stock.delete', $item->id) }}" onsubmit="return confirm('Apakah kamu yakin ingin mengosongkan stok unit ini?')">
+                                <form method="POST" action="{{ route('admin.stock.delete', $item->id) }}" onsubmit="return confirm('Yakin ingin mengosongkan stok?')">
                                     @csrf
                                     <button type="submit" class="bg-rose-50 hover:bg-rose-100 border border-rose-200/40 text-rose-600 px-3 py-1.5 rounded-lg font-bold transition cursor-pointer text-[10px] uppercase tracking-wider border-0">
                                         Kosongkan
@@ -71,16 +68,15 @@
                             </td>
                         </tr>
                     @empty
-                        <tr id="emptyRowGlobal">
+                        <tr>
                             <td colspan="4" class="py-16 text-center text-slate-400">
                                 <div class="flex flex-col items-center justify-center space-y-2">
                                     <span class="text-3xl opacity-50">📦</span>
-                                    <p class="font-extrabold text-slate-700 text-xs tracking-tight uppercase">Belum ada data unit kendaraan</p>
+                                    <p class="font-extrabold text-slate-700 text-xs tracking-tight uppercase">Belum ada unit barang untuk dikelola stoknya.</p>
                                 </div>
                             </td>
                         </tr>
                     @endforelse
-                    
                     <tr id="noResultsRow" class="hidden">
                         <td colspan="4" class="py-12 text-center text-slate-400 font-bold text-xs uppercase tracking-wide">Data unit tidak ditemukan.</td>
                     </tr>
@@ -104,7 +100,6 @@
                 rows.forEach(row => {
                     const itemName = row.getAttribute('data-name');
                     const itemCategory = row.getAttribute('data-category');
-
                     const matchesSearch = itemName.includes(searchValue);
                     const matchesCategory = (filterValue === 'all' || itemCategory === filterValue);
 
@@ -116,11 +111,7 @@
                     }
                 });
 
-                if (visibleCount === 0 && rows.length > 0) {
-                    noResultsRow.classList.remove('hidden');
-                } else {
-                    noResultsRow.classList.add('hidden');
-                }
+                noResultsRow.classList.toggle('hidden', visibleCount > 0);
             }
 
             searchInput.addEventListener('input', filterTable);

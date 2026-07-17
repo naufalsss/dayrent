@@ -1,123 +1,179 @@
 @extends('admin.master')
 
 @section('content')
-    <!-- SUNTIKAN STYLE KUSTOM AGAR TUMPUL SECARA PAKSA & FIX TOMBOL PANAH -->
-    <style>
-        .finset-card {
-            border-radius: 24px !important; /* Memaksa sudut card tumpul sempurna (setara rounded-3xl) */
-            border: 1px solid #e2e8f0 !important;
-            background-color: #ffffff !important;
-        }
-        .btn-panah-bulat {
-            width: 28px !important;
-            height: 28px !important;
-            min-width: 28px !important;
-            min-height: 28px !important;
-            max-width: 28px !important;
-            max-height: 28px !important;
-            border-radius: 9999px !important; /* Memaksa lingkaran murni 100% tidak bisa gepeng */
-            border: 1px solid #e2e8f0 !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            box-sizing: border-box !important;
-        }
-    </style>
+<div class="space-y-8">
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm hover:border-slate-300 transition duration-150">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Kategori</p>
+                    <h3 class="text-2xl font-extrabold text-slate-900 mt-1">{{ $totalKategori ?? 0 }}</h3>
+                </div>
+                <div class="w-7 h-7 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center text-xs text-slate-400">📁</div>
+            </div>
+            <div class="flex items-center gap-1.5 mt-4">
+                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Kategori Terdaftar</span>
+            </div>
+        </div>
 
-    <!-- 1. Grid 4 Kartu Utama -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 flex-shrink-0">
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm hover:border-slate-300 transition duration-150">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Unit Barang</p>
+                    <h3 class="text-2xl font-extrabold text-slate-900 mt-1">{{ $totalBarang ?? 0 }}</h3>
+                </div>
+                <div class="w-7 h-7 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center text-xs text-slate-400">📦</div>
+            </div>
+            <div class="flex items-center gap-1.5 mt-4">
+                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Unit Siap Sewa</span>
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm hover:border-slate-300 transition duration-150">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Penyewaan Aktif</p>
+                    <h3 class="text-2xl font-extrabold text-slate-900 mt-1">{{ $penyewaanAktif ?? 0 }}</h3>
+                </div>
+                <div class="w-7 h-7 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center text-xs text-slate-400">⚡</div>
+            </div>
+            <div class="flex items-center gap-1.5 mt-4">
+                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Rental Berjalan</span>
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm hover:border-slate-300 transition duration-150">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Pendapatan</p>
+                    <h3 class="text-2xl font-extrabold text-blue-600 mt-1">Rp {{ number_format($totalPendapatan ?? 0, 0, ',', '.') }}</h3>
+                </div>
+                <div class="w-7 h-7 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center text-xs text-slate-400">💰</div>
+            </div>
+            <div class="flex items-center gap-1.5 mt-4">
+                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Akumulasi Finansial</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        <!-- Card 1: Total Kategori -->
-        <div class="finset-card p-6 shadow-sm flex flex-col justify-between relative overflow-hidden">
-            <div class="flex justify-between items-start">
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Kategori</span>
-                <div class="btn-panah-bulat font-bold text-slate-400 text-xs hover:bg-slate-50 transition cursor-pointer">↗</div>
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider">Item Terpopuler</h3>
+                    <p class="text-[11px] text-slate-400 font-medium mt-0.5">Item yang paling sering disewa pelanggan.</p>
+                </div>
+                <form method="GET" action="{{ route('admin.dashboard') }}" id="formDays">
+                    <input type="hidden" name="year" value="{{ $yearFilter }}">
+                    <select name="days" onchange="document.getElementById('formDays').submit()" class="text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-slate-300 cursor-pointer">
+                        <option value="30" {{ $daysFilter == 30 ? 'selected' : '' }}>30 Hari Terakhir</option>
+                        <option value="60" {{ $daysFilter == 60 ? 'selected' : '' }}>60 Hari Terakhir</option>
+                        <option value="90" {{ $daysFilter == 90 ? 'selected' : '' }}>90 Hari Terakhir</option>
+                        <option value="180" {{ $daysFilter == 180 ? 'selected' : '' }}>180 Hari Terakhir</option>
+                        <option value="360" {{ $daysFilter == 360 ? 'selected' : '' }}>360 Hari Terakhir</option>
+                    </select>
+                </form>
             </div>
-            <div class="mt-4">
-                <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">{{ $totalKategori }}</h3>
-                <p class="text-[10px] text-emerald-600 font-bold mt-1 flex items-center gap-1">
-                    <span>↑ 12.1%</span> <span class="text-slate-400 font-medium">vs last month</span>
-                </p>
-            </div>
-        </div>
-
-        <!-- Card 2: Total Unit Barang -->
-        <div class="finset-card p-6 shadow-sm flex flex-col justify-between relative overflow-hidden">
-            <div class="flex justify-between items-start">
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Unit Barang</span>
-                <div class="btn-panah-bulat font-bold text-slate-400 text-xs hover:bg-slate-50 transition cursor-pointer">↗</div>
-            </div>
-            <div class="mt-4">
-                <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">{{ $totalBarang }}</h3>
-                <p class="text-[10px] text-emerald-600 font-bold mt-1 flex items-center gap-1">
-                    <span>↑ 6.3%</span> <span class="text-slate-400 font-medium">vs last month</span>
-                </p>
+            <div class="relative h-64 w-full">
+                <canvas id="popularItemsChart"></canvas>
             </div>
         </div>
 
-        <!-- Card 3: Penyewaan Aktif -->
-        <div class="finset-card p-6 shadow-sm flex flex-col justify-between relative overflow-hidden">
-            <div class="flex justify-between items-start">
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Penyewaan Aktif</span>
-                <div class="btn-panah-bulat font-bold text-slate-400 text-xs hover:bg-slate-50 transition cursor-pointer">↗</div>
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider">Tren Pendapatan</h3>
+                    <p class="text-[11px] text-slate-400 font-medium mt-0.5">Grafik total nominal pendapatan bulanan masuk.</p>
+                </div>
+                <form method="GET" action="{{ route('admin.dashboard') }}" id="formYear">
+                    <input type="hidden" name="days" value="{{ $daysFilter }}">
+                    <select name="year" onchange="document.getElementById('formYear').submit()" class="text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-slate-300 cursor-pointer">
+                        @foreach($availableYears as $yr)
+                            <option value="{{ $yr }}" {{ $yearFilter == $yr ? 'selected' : '' }}>Tahun {{ $yr }}</option>
+                        @endforeach
+                    </select>
+                </form>
             </div>
-            <div class="mt-4">
-                <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">0</h3>
-                <p class="text-[10px] text-rose-500 font-bold mt-1 flex items-center gap-1">
-                    <span>↓ 2.4%</span> <span class="text-slate-400 font-medium">vs last month</span>
-                </p>
+            <div class="relative h-64 w-full">
+                <canvas id="monthlyEarningsChart"></canvas>
             </div>
         </div>
 
-        <!-- Card 4: Total Pendapatan -->
-        <div class="finset-card p-6 shadow-sm flex flex-col justify-between relative overflow-hidden">
-            <div class="flex justify-between items-start">
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Pendapatan</span>
-                <div class="btn-panah-bulat font-bold text-slate-400 text-xs hover:bg-slate-50 transition cursor-pointer">↗</div>
-            </div>
-            <div class="mt-4">
-                <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">Rp 0</h3>
-                <p class="text-[10px] text-emerald-600 font-bold mt-1 flex items-center gap-1">
-                    <span>↑ 12.1%</span> <span class="text-slate-400 font-medium">vs last month</span>
-                </p>
-            </div>
-        </div>
     </div>
+</div>
 
-    <!-- 2. Bagian Bawah: Tabel Transaksi -->
-    <div class="finset-card p-6 shadow-sm flex-1 flex flex-col justify-between overflow-hidden mb-1">
-        <div class="flex flex-col h-full">
-            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4 flex-shrink-0">
-                <h4 class="font-extrabold text-base text-slate-900">Recent logs / transactions</h4>
-                <a href="#" class="text-xs font-bold text-violet-600 hover:underline flex items-center gap-1">See all ↗</a>
-            </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // ---------------------------------------------------------
+    // RENDER GRAFIK 1: ITEM TERPOPULER (BAR CHART HORIZONTAL)
+    // ---------------------------------------------------------
+    const ctxItems = document.getElementById('popularItemsChart').getContext('2d');
+    new Chart(ctxItems, {
+        type: 'bar',
+        data: {
+            labels: {!! json_encode($popularItemLabels) !!},
+            datasets: [{
+                label: 'Jumlah Transaksi Sewa',
+                data: {!! json_encode($popularItemValues) !!},
+                backgroundColor: 'rgba(99, 102, 241, 0.8)', // Indigo Slate
+                borderRadius: 6,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            indexAxis: 'y', // Membuat bar chart jadi horizontal biar teks nama item panjang tetap rapi
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { ticks: { stepSize: 1, font: { size: 10 } }, grid: { display: false } },
+                y: { ticks: { font: { size: 11, weight: 'bold' } } }
+            }
+        }
+    });
 
-            <div class="overflow-x-auto flex-1 rounded-2xl overflow-hidden">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50">
-                            <th class="py-3.5 px-4 rounded-l-xl">Date</th>
-                            <th class="py-3.5 px-4">User</th>
-                            <th class="py-3.5 px-4">Action / Unit</th>
-                            <th class="py-3.5 px-4 rounded-r-xl">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="text-xs font-semibold text-slate-600 divide-y divide-slate-100">
-                        <tr class="hover:bg-slate-50/50 transition">
-                            <td class="py-4 px-4 text-slate-400">03 Jun 16:30</td>
-                            <td class="py-4 px-4 font-bold text-slate-900">{{ auth()->user()->name }}</td>
-                            <td class="py-4 px-4 text-slate-500">Registered New Account via Breeze</td>
-                            <td class="py-4 px-4"><span class="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide">Success</span></td>
-                        </tr>
-                        <tr class="hover:bg-slate-50/50 transition">
-                            <td class="py-4 px-4 text-slate-400">03 Jun 15:12</td>
-                            <td class="py-4 px-4 font-bold text-slate-900">System Bot</td>
-                            <td class="py-4 px-4 text-slate-500">Compiled Asset via Vite Dev Engine</td>
-                            <td class="py-4 px-4"><span class="bg-violet-50 text-violet-600 px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide">Active</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    // ---------------------------------------------------------
+    // RENDER GRAFIK 2: TREN PENDAPATAN BULANAN (LINE CHART ELEGAN)
+    // ---------------------------------------------------------
+    const ctxEarnings = document.getElementById('monthlyEarningsChart').getContext('2d');
+    new Chart(ctxEarnings, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+            datasets: [{
+                label: 'Pendapatan (Rp)',
+                data: {!! json_encode($monthlyEarnings) !!},
+                borderColor: 'rgba(37, 99, 235, 1)', // Blue-600
+                backgroundColor: 'rgba(37, 99, 235, 0.05)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.3, // Efek garis melengkung smooth halus
+                pointRadius: 4,
+                pointBackgroundColor: 'rgba(37, 99, 235, 1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                y: { 
+                    ticks: { 
+                        font: { size: 10 },
+                        callback: function(value) {
+                            return 'Rp ' + value.toLocaleString('id-ID');
+                        }
+                    } 
+                }
+            }
+        }
+    });
+</script>
 @endsection

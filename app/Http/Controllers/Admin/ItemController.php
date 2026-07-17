@@ -12,7 +12,15 @@ class ItemController extends Controller
     // Tampilkan List Barang sekaligus Form Tambah data (Split View)
     public function index()
     {
-        $items = Item::with('category')->latest()->get();
+        // FIX AMAN: Mengambil barang milik admin sendiri ATAU barang bawaan yang user_id-nya kosong (NULL)
+        $items = Item::with('category')
+            ->where(function($query) {
+                $query->where('user_id', auth()->id())
+                      ->orWhereNull('user_id');
+            })
+            ->latest()
+            ->get();
+            
         $categories = Category::all(); 
         return view('admin.items.index', compact('items', 'categories'));
     }
@@ -37,15 +45,23 @@ class ItemController extends Controller
             $inputData['image'] = '/storage/' . 'products/' . $filename;
         }
 
+        // FIX: Otomatis kunci user_id ke ID Super Admin yang membuat barang ini
+        $inputData['user_id'] = auth()->id();
+
         Item::create($inputData);
 
         return redirect()->back()->with('success', 'Unit barang rental baru sukses didaftarkan dengan gambar lokal!');
     }
 
-    // ================= FIX SAKTI: SEKARANG FUNGSI UPDATE SUDAH ADA =================
+    // FIX SAKTI: SEKARANG FUNGSI UPDATE SUDAH ADA & DIPROTEKSI
     public function update(Request $request, Item $item)
     {
-        // 1. Validasi data edit (Image dibuat nullable karena tidak wajib ganti foto tiap edit)
+        // PROTEKSI: Mencegah Admin usil mengubah unit milik merchant lain via manipulasi inspect element / API
+        if ($item->user_id !== auth()->id()) {
+            return redirect()->back()->with('error', 'Oops! Anda tidak berhak mengubah unit barang ini.');
+        }
+
+        // 1. Validasi data edit
         $request->validate([
             'category_id' => 'required|exists:categories,id',
             'name' => 'required|string|max:255',
@@ -74,6 +90,11 @@ class ItemController extends Controller
     // Hapus barang dari database
     public function destroy(Item $item)
     {
+        // PROTEKSI: Mencegah Admin menghapus barang milik merchant lain
+        if ($item->user_id !== auth()->id()) {
+            return redirect()->back()->with('error', 'Oops! Anda tidak berhak menghapus unit barang ini.');
+        }
+
         $item->delete();
         return redirect()->back()->with('success', 'Unit barang sukses dihapus dari katalog!');
     }

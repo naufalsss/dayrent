@@ -19,7 +19,7 @@
         
         <div class="flex items-center justify-between pb-4 border-b border-white/5">
             <div>
-                <h2 class="text-xl font-black uppercase tracking-tight text-white">⚙️ Pengaturan Profil</h2>
+                <h2 class="text-xl font-black uppercase tracking-tight text-white">Lengkapi Profil</h2>
                 <p class="text-[11px] text-slate-400 mt-1 font-medium">Lengkapi atau perbarui informasi data diri Anda secara mandiri.</p>
             </div>
             <a href="/" class="text-xs bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded-xl transition duration-200">
@@ -66,7 +66,7 @@
 
             <div class="border-t border-white/5 pt-4 space-y-4">
                 <div class="bg-blue-500/5 border border-blue-500/10 p-3 rounded-2xl">
-                    <p class="text-[10px] text-blue-400 leading-relaxed font-semibold">💡 Kosongkan kolom Kata Sandi Baru di bawah ini jika Anda tidak ingin mengubah password akun Anda saat ini.</p>
+                    <p class="text-[10px] text-blue-400 leading-relaxed font-semibold">Kosongkan kolom Kata Sandi Baru di bawah ini jika Anda tidak ingin mengubah password akun Anda saat ini.</p>
                 </div>
 
                 <div class="space-y-1.5">
