@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -80,8 +82,35 @@ class UserController extends Controller
         }
 
         $user = User::findOrFail($id);
-        $user->delete();
         
-        return redirect()->back()->with('success', 'Akun pengguna berhasil dihapus dari sistem!');
+        DB::transaction(function () use ($user) {
+            // Jika user yang dihapus adalah Merchant, bersihkan semua data yang berelasi
+            if ($user->role === 'merchant') {
+                $merchantId = $user->id;
+
+                // A. Bersihkan Transaksi Pending/Ghaib
+                // Hapus semua transaksi penyewaan yang masih berstatus pending dan terkait dengan merchant ini
+                DB::table('rentals')
+                    ->where('merchant_id', $merchantId)
+                    ->where('status', 'pending')
+                    ->delete();
+
+                // B. Hapus File Gambar Barang di Storage
+                $items = DB::table('items')->where('user_id', $merchantId)->get();
+                foreach ($items as $item) {
+                    if ($item->image && Storage::disk('public')->exists($item->image)) {
+                        Storage::disk('public')->delete($item->image);
+                    }
+                }
+
+                // C. Hapus Record Unit Barang dari tabel items
+                DB::table('items')->where('user_id', $merchantId)->delete();
+            }
+
+            // Hapus record utama user
+            $user->delete();
+        });
+        
+        return redirect()->back()->with('success', 'Akun pengguna beserta seluruh data terkait berhasil dihapus bersih dari sistem!');
     }
 }

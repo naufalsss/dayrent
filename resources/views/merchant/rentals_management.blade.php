@@ -58,7 +58,44 @@
                                 @if($rental->status === 'returned')
                                     <span class="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase bg-blue-50 text-blue-600 border border-blue-100">Returned</span>
                                 @elseif($rental->status === 'approved')
-                                    <span class="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase bg-emerald-50 text-emerald-600 border border-emerald-100">Approved</span>
+                                    @if(isset($rental->expired_at) && strtotime($rental->expired_at) > time())
+                                        <div class="flex flex-col gap-1">
+                                            <span class="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase bg-emerald-50 text-emerald-600 border border-emerald-100 w-fit">Approved</span>
+                                            <span id="countdown-{{ $rental->id }}" class="bg-blue-50 text-blue-600 font-mono px-2 py-0.5 rounded text-[9px] font-bold w-fit mt-1">
+                                                Menghitung...
+                                            </span>
+                                        </div>
+                                        <script>
+                                            (function() {
+                                                const rawDateStr = "{{ $rental->expired_at }}".replace(" ", "T") + "+07:00";
+                                                const countDownDate = new Date(rawDateStr).getTime();
+                                                
+                                                const timer = setInterval(function() {
+                                                    const now = new Date().getTime();
+                                                    const distance = countDownDate - now;
+
+                                                    if (distance < 0) {
+                                                        clearInterval(timer);
+                                                        document.getElementById("countdown-{{ $rental->id }}").innerHTML = "WAKTU HABIS";
+                                                        document.getElementById("countdown-{{ $rental->id }}").className = "bg-rose-50 text-rose-600 font-mono px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider w-fit mt-1 border border-rose-100";
+                                                    } else {
+                                                        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                                                        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                                                        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                                                        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                                                        let output = "";
+                                                        if (days > 0) output += days + "h ";
+                                                        output += hours + "j " + minutes + "m " + seconds + "s";
+                                                        
+                                                        document.getElementById("countdown-{{ $rental->id }}").innerHTML = "Sisa: " + output;
+                                                    }
+                                                }, 1000);
+                                            })();
+                                        </script>
+                                    @else
+                                        <span class="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase bg-rose-50 text-rose-600 border border-rose-100">Expired</span>
+                                    @endif
                                 @elseif($rental->status === 'declined')
                                     <span class="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase bg-rose-50 text-rose-600 border border-rose-100">Declined</span>
                                 @else

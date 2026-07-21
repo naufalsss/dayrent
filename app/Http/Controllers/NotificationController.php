@@ -52,4 +52,21 @@ class NotificationController extends Controller
 
         return redirect()->back()->with('success', 'Terima kasih atas penilaian rating dan ulasan Anda, Bree!');
     }
+
+    // Aksi untuk menutup (dismiss/abaikan) notifikasi rating
+    public function dismissRating($id)
+    {
+        $notification = DB::table('notifications')->where('id', $id)->first();
+        if (!$notification) {
+            return response()->json(['success' => false, 'message' => 'Notifikasi tidak ditemukan']);
+        }
+
+        DB::table('notifications')->where('id', $id)->update([
+            'is_rated' => true,
+            'is_read' => true,
+            'updated_at' => now()
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Notifikasi berhasil ditutup']);
+    }
 }

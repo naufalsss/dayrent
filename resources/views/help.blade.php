@@ -9,7 +9,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    @vite('resources/css/app.css')
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- DYNAMIC FAVICON -->
+    @if(isset($configs['app_logo']) && !empty($configs['app_logo']))
+        <link rel="icon" href="{{ asset('storage/' . $configs['app_logo']) }}" type="image/x-icon">
+    @else
+        <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
+    @endif
 </head>
 <body class="bg-slate-950 text-white min-h-screen relative overflow-x-hidden" style="font-family: 'Poppins', sans-serif;">
 
@@ -29,7 +36,7 @@
                         {{ substr($configs['app_name'] ?? 'D', 0, 1) }}
                     @endif
                 </div>
-                <span class="font-extrabold text-xl tracking-wider text-white">{{ $configs['app_name'] ?? 'DAY-RENT' }}</span>
+                <span class="font-extrabold text-sm md:text-base tracking-wider text-white">{{ $configs['app_name'] ?? 'DAY-RENT' }}</span>
             </div>
 
             <div class="hidden md:flex items-center gap-8 font-medium">
@@ -108,8 +115,13 @@
                         </div>
                     </div>
                 @else
-                    <a href="/login" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-md font-semibold shadow-md shadow-blue-600/30 transition duration-200 text-sm">Masuk Akun</a>
+                    <a href="/login" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-md font-semibold shadow-md shadow-blue-600/30 transition duration-200 text-sm hidden md:block">Masuk Akun</a>
                 @endauth
+                
+                <!-- Hamburger Menu Button -->
+                <button id="mobileMenuBtn" class="md:hidden text-white hover:text-blue-400 focus:outline-none transition cursor-pointer">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
             </div>
         </nav>
 
@@ -256,7 +268,7 @@
                                 {{ substr($configs['app_name'] ?? 'D', 0, 1) }}
                             @endif
                         </div>
-                        <span class="font-extrabold text-xl tracking-wider text-white">{{ $configs['app_name'] ?? 'DAY-RENT' }}</span>
+                        <span class="font-extrabold text-sm md:text-base tracking-wider text-white">{{ $configs['app_name'] ?? 'DAY-RENT' }}</span>
                     </div>
                     <p class="text-xs text-slate-400 leading-relaxed max-w-sm">
                         Sistem Informasi Content Management System (CMS) persewaan harian universal terintegrasi otomatis untuk efisiensi bisnis rental Anda.
@@ -441,6 +453,52 @@
                 nCard.classList.add("hidden");
             }
         });
+
+        // ==========================================
+        // MOBILE HAMBURGER JAVASCRIPT LOGIC
+        // ==========================================
+        document.addEventListener("DOMContentLoaded", function() {
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+            const mobileDrawer = document.getElementById('mobileDrawer');
+
+            if(mobileMenuBtn && closeDrawerBtn && mobileDrawer) {
+                mobileMenuBtn.addEventListener('click', () => {
+                    mobileDrawer.classList.remove('-translate-y-full');
+                });
+                closeDrawerBtn.addEventListener('click', () => {
+                    mobileDrawer.classList.add('-translate-y-full');
+                });
+            }
+        });
     </script>
+
+    <!-- MOBILE DRAWER MENU -->
+    <div id="mobileDrawer" class="fixed inset-x-0 top-0 z-[100] bg-slate-950/98 backdrop-blur-2xl border-b border-white/10 p-6 transform -translate-y-full transition-transform duration-300 shadow-2xl md:hidden">
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center font-bold text-white text-lg overflow-hidden p-0.5">
+                    @if(!empty($configs['app_logo']))
+                        <img src="{{ asset('storage/' . $configs['app_logo']) }}" class="w-full h-full object-contain rounded-full">
+                    @else
+                        {{ substr($configs['app_name'] ?? 'D', 0, 1) }}
+                    @endif
+                </div>
+                <span class="font-extrabold text-sm md:text-base tracking-wider text-white">{{ $configs['app_name'] ?? 'DAY-RENT' }}</span>
+            </div>
+            <button id="closeDrawerBtn" class="text-white hover:text-rose-400 focus:outline-none transition cursor-pointer">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="flex flex-col gap-5 font-semibold text-lg">
+            <a href="/" class="text-slate-300 hover:text-white pb-2 border-b border-white/10 transition">Beranda</a>
+            <a href="/catalog" class="text-slate-300 hover:text-white transition pb-2 border-b border-white/10">Katalog</a>
+            <a href="/guide" class="text-slate-300 hover:text-white transition pb-2 border-b border-white/10">Panduan</a>
+            <a href="/help" class="text-slate-300 hover:text-white transition pb-2 border-b border-white/10">Bantuan</a>
+            @guest
+                <a href="/login" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-md font-bold text-center mt-4 tracking-wider uppercase text-sm">Masuk Akun</a>
+            @endguest
+        </div>
+    </div>
 </body>
 </html>

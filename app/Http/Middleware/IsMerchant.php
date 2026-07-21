@@ -10,8 +10,8 @@ class IsMerchant
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // Pastikan user sudah login dan rolenya adalah merchant atau admin
-        if (auth()->check() && (auth()->user()->role === 'merchant' || auth()->user()->role === 'admin')) {
+        // Pastikan user sudah login dan rolenya murni hanya merchant
+        if (auth()->check() && auth()->user()->role === 'merchant') {
             return $next($request);
         }
 

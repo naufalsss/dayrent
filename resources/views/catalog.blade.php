@@ -9,7 +9,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    @vite('resources/css/app.css')
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- DYNAMIC FAVICON -->
+    @if(isset($configs['app_logo']) && !empty($configs['app_logo']))
+        <link rel="icon" href="{{ asset('storage/' . $configs['app_logo']) }}" type="image/x-icon">
+    @else
+        <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
+    @endif
 </head>
 <body class="bg-slate-950 text-white min-h-screen relative overflow-x-hidden" style="font-family: 'Poppins', sans-serif;">
 
@@ -27,7 +34,7 @@
                         {{ substr($configs['app_name'] ?? 'D', 0, 1) }}
                     @endif
                 </div>
-                <span class="font-extrabold text-xl tracking-wider text-white">{{ $configs['app_name'] ?? 'DAY-RENT' }}</span>
+                <span class="font-extrabold text-sm md:text-base tracking-wider text-white">{{ $configs['app_name'] ?? 'DAY-RENT' }}</span>
             </div>
 
             <div class="hidden md:flex items-center gap-8 font-medium">
@@ -106,9 +113,14 @@
                         </div>
                     </div>
                 @else
-                    <a href="/login" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-md font-semibold shadow-md shadow-blue-600/30 transition duration-200 text-sm">Masuk Akun</a>
-                @endauth
-            </div>
+                        <a href="/login" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-md font-semibold shadow-md shadow-blue-600/30 transition duration-200 text-sm hidden md:block">Masuk Akun</a>
+                    @endauth
+                    
+                    <!-- Hamburger Menu Button -->
+                    <button id="mobileMenuBtn" class="md:hidden text-white hover:text-blue-400 focus:outline-none transition cursor-pointer">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                </div>
         </nav>
 
         <!-- CONTENT FILTERS & SEARCH -->
@@ -171,9 +183,9 @@
                         </div>
 
                         <!-- GRID FLUID DENGAN RATA TENGAH (ANTI MEPET KIRI JIKA SISA 2 CARD) -->
-                        <div class="flex flex-wrap justify-center gap-6">
+                        <div class="flex flex-wrap justify-center gap-2 sm:gap-4 md:gap-6 px-1 sm:px-0">
                             @foreach($catProducts as $index => $item)
-                                <div class="catalog-fade-card relative w-full sm:w-[calc(50%-12px)] md:w-[calc(33.333%-16px)] lg:w-[calc(25%-18px)] aspect-[3/4] rounded-none overflow-hidden shadow-2xl group border border-white/10 hover:border-blue-500/40 transition duration-300 shrink-0"
+                                <div class="catalog-fade-card relative w-[calc(50%-6px)] sm:w-[calc(33.333%-12px)] md:w-[calc(33.333%-16px)] lg:w-[calc(25%-18px)] aspect-[3/4] rounded-none overflow-hidden shadow-2xl group border border-white/10 hover:border-blue-500/40 transition duration-300 shrink-0"
                                      style="--card-delay: {{ ($index % 4) * 0.12 }}s;">
                                     
                                     <!-- FIX LOGIC BREE: Mengamankan deteksi string folder dari admin maupun folder merchant -->
@@ -183,9 +195,9 @@
                                     
                                     <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent z-10"></div>
 
-                                    <div class="absolute inset-0 p-5 z-20 flex flex-col justify-between">
+                                    <div class="absolute inset-0 p-2 sm:p-5 z-20 flex flex-col justify-between">
                                         <div class="flex justify-between items-start">
-                                            <div class="backdrop-blur-md bg-black/40 text-violet-400 border border-violet-500/30 px-2.5 py-1 rounded-none text-[9px] font-black uppercase tracking-wider">
+                                            <div class="backdrop-blur-md bg-black/40 text-violet-400 border border-violet-500/30 px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-none text-[7px] sm:text-[9px] font-black uppercase tracking-wider hidden sm:block">
                                                 {{ $item->category_name }}
                                             </div>
                                             <div class="backdrop-blur-md bg-black/40 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-none text-[10px] font-bold flex items-center gap-1">
@@ -195,35 +207,36 @@
                                         </div>
 
                                         <div class="space-y-3">
-                                            <div>
-                                                <h3 class="text-sm font-extrabold text-white tracking-tight leading-tight line-clamp-2 drop-shadow-md">
+                                            <div class="mt-2 sm:mt-0">
+                                                <h3 class="text-[10px] sm:text-xl font-bold text-white leading-tight drop-shadow-md line-clamp-1 sm:line-clamp-none">
                                                     {{ $item->name }}
                                                 </h3>
-                                                <div class="flex items-center gap-3 text-[10px] text-slate-300 font-medium mt-1 drop-shadow">
-                                                    <span>Tersewa: <strong class="text-white">{{ $item->total_rented ?? 0 }}</strong></span>
+                                                <div class="flex items-center gap-1 sm:gap-3 text-[8px] sm:text-[10px] text-slate-300 font-medium mt-1 drop-shadow">
+                                                    <span>Sewa: <strong class="text-white">{{ $item->total_rented ?? 0 }}</strong></span>
                                                     <span class="text-white/20">|</span>
                                                     <span>Stok: <strong class="{{ $item->stock > 0 ? 'text-emerald-400' : 'text-rose-400' }}">{{ $item->stock }}</strong></span>
                                                 </div>
                                             </div>
 
-                                            <div>
-                                                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Harga Sewa</p>
-                                                <p class="text-base font-black text-white tracking-tight leading-none drop-shadow-md">
-                                                    Rp {{ is_numeric(str_replace('.', '', $item->price)) ? number_format(str_replace('.', '', $item->price), 0, ',', '.') : $item->price }}
-                                                    <span class="text-slate-400 font-normal text-[11px] tracking-normal">/hari</span>
+                                            <div class="mt-auto mb-2 sm:mb-4">
+                                                <p class="text-[7px] sm:text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-0.5 hidden sm:block">Harga Sewa</p>
+                                                <p class="text-[9px] sm:text-base font-black text-white tracking-tight leading-none drop-shadow-md">
+                                                    Rp{{ is_numeric(str_replace('.', '', $item->price)) ? number_format(str_replace('.', '', $item->price), 0, ',', '.') : $item->price }}<span class="text-slate-400 font-normal text-[8px] sm:text-[11px] tracking-normal">/hr</span>
                                                 </p>
                                             </div>
 
                                             @if($item->stock > 0)
                                                 <a href="{{ route('items.checkout', $item->id) }}" 
-                                                   class="w-full bg-blue-600/90 hover:bg-blue-500 backdrop-blur-sm text-white font-bold text-[11px] py-3 px-4 rounded-none transition duration-200 cursor-pointer flex items-center justify-between tracking-wider uppercase border-0 group/btn">
-                                                    <span>Sewa Sekarang</span>
-                                                    <span class="text-sm transform group-hover/btn:translate-x-1 transition duration-200">→</span>
+                                                   class="w-full bg-blue-600/90 hover:bg-blue-500 backdrop-blur-sm text-white font-bold text-[8px] sm:text-[11px] py-1.5 sm:py-3 px-1 sm:px-4 rounded-none transition duration-200 cursor-pointer flex items-center justify-center sm:justify-between tracking-wider uppercase border-0 group/btn">
+                                                    <span class="hidden sm:inline">Sewa Sekarang</span>
+                                                    <span class="sm:hidden">SEWA</span>
+                                                    <span class="hidden sm:inline text-sm transform group-hover/btn:translate-x-1 transition duration-200">→</span>
                                                 </a>
                                             @else
                                                 <button disabled 
-                                                        class="w-full bg-rose-950/60 backdrop-blur-sm text-rose-400 border border-rose-500/30 font-bold text-[11px] py-3 px-4 rounded-none cursor-not-allowed tracking-wider uppercase flex items-center justify-center">
-                                                    Sedang Disewa
+                                                        class="w-full bg-rose-950/60 backdrop-blur-sm text-rose-400 border border-rose-500/30 font-bold text-[8px] sm:text-[11px] py-1.5 sm:py-3 px-1 sm:px-4 rounded-none cursor-not-allowed tracking-wider uppercase flex items-center justify-center">
+                                                    <span class="hidden sm:inline">Sedang Disewa</span>
+                                                    <span class="sm:hidden">KOSONG</span>
                                                 </button>
                                             @endif
                                         </div>
@@ -275,6 +288,34 @@
         </div>
     </div>
 
+    <!-- MOBILE DRAWER MENU -->
+    <div id="mobileDrawer" class="fixed inset-x-0 top-0 z-[100] bg-slate-950/98 backdrop-blur-2xl border-b border-white/10 p-6 transform -translate-y-full transition-transform duration-300 shadow-2xl md:hidden">
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center font-bold text-white text-lg overflow-hidden p-0.5">
+                    @if(!empty($configs['app_logo']))
+                        <img src="{{ asset('storage/' . $configs['app_logo']) }}" class="w-full h-full object-contain rounded-full">
+                    @else
+                        {{ substr($configs['app_name'] ?? 'D', 0, 1) }}
+                    @endif
+                </div>
+                <span class="font-extrabold text-sm md:text-base tracking-wider text-white">{{ $configs['app_name'] ?? 'DAY-RENT' }}</span>
+            </div>
+            <button id="closeDrawerBtn" class="text-white hover:text-rose-400 focus:outline-none transition cursor-pointer">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="flex flex-col gap-5 font-semibold text-lg">
+            <a href="/" class="text-slate-300 hover:text-white transition pb-2 border-b border-white/10">Beranda</a>
+            <a href="/catalog" class="text-blue-400 pb-2 border-b border-white/10">Katalog</a>
+            <a href="/guide" class="text-slate-300 hover:text-white transition pb-2 border-b border-white/10">Panduan</a>
+            <a href="/help" class="text-slate-300 hover:text-white transition pb-2 border-b border-white/10">Bantuan</a>
+            @guest
+                <a href="/login" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-md font-bold text-center mt-4 tracking-wider uppercase text-sm">Masuk Akun</a>
+            @endguest
+        </div>
+    </div>
+
     <!-- FOOTER EKSKLUSIF ORIGINAL -->
     <footer class="relative mt-32 border-t border-white/10 bg-slate-950/95 backdrop-blur-md overflow-hidden w-full">
         <div class="absolute inset-0 pointer-events-none overflow-hidden z-0 opacity-40">
@@ -296,7 +337,7 @@
                                 {{ substr($configs['app_name'] ?? 'D', 0, 1) }}
                             @endif
                         </div>
-                        <span class="font-extrabold text-xl tracking-wider text-white">{{ $configs['app_name'] ?? 'DAY-RENT' }}</span>
+                        <span class="font-extrabold text-sm md:text-base tracking-wider text-white">{{ $configs['app_name'] ?? 'DAY-RENT' }}</span>
                     </div>
                     <p class="text-xs text-slate-400 leading-relaxed max-w-sm">
                         Sistem Informasi Content Management System (CMS) persewaan harian universal terintegrasi otomatis untuk efisiensi bisnis rental Anda.
@@ -435,6 +476,22 @@
                 nCard.classList.add("hidden");
             }
         });
+
+        // ==========================================
+        // MOBILE HAMBURGER JAVASCRIPT LOGIC
+        // ==========================================
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+        const mobileDrawer = document.getElementById('mobileDrawer');
+
+        if(mobileMenuBtn && closeDrawerBtn && mobileDrawer) {
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileDrawer.classList.remove('-translate-y-full');
+            });
+            closeDrawerBtn.addEventListener('click', () => {
+                mobileDrawer.classList.add('-translate-y-full');
+            });
+        }
     </script>
 </body>
 </html>

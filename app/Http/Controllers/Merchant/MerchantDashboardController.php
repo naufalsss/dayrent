@@ -10,30 +10,108 @@ use Carbon\Carbon;
 class MerchantDashboardController extends Controller
 {
     // 1. Halaman Overview Dashboard Merchant
-    public function index()
+    public function index(Request $request)
     {
         $merchantId = auth()->id();
 
-        // Hitung total unit barang milik merchant ini saja
-        $totalItems = DB::table('items')->where('user_id', $merchantId)->count();
+        // =========================================================================
+        // 1. DATA CARD STATUS UTAMA (MERCHANT KHUSUS)
+        // =========================================================================
+        $totalKategori = DB::table('items')
+            ->where('user_id', $merchantId)
+            ->distinct()
+            ->count('category_id');
 
-        // Hitung total transaksi penyewaan milik merchant ini saja
-        $totalRentals = DB::table('rentals')->where('merchant_id', $merchantId)->count();
+        $totalBarang = DB::table('items')->where('user_id', $merchantId)->count();
+        
+        // FIX SAKTI: Menghitung penyewaan aktif (approved) baik dari rentals.merchant_id ATAU items.user_id
+        $penyewaanAktif = DB::table('rentals')
+            ->join('items', 'rentals.item_id', '=', 'items.id')
+            ->where('rentals.status', 'approved')
+            ->where(function($q) use ($merchantId) {
+                $q->where('rentals.merchant_id', $merchantId)
+                  ->orWhere('items.user_id', $merchantId);
+            })
+            ->count();
+        
+        // FIX SAKTI: Total pendapatan dihitung dari transaksi sah (approved, returned, expired)
+        $totalPendapatan = DB::table('rentals')
+            ->join('items', 'rentals.item_id', '=', 'items.id')
+            ->whereIn('rentals.status', ['approved', 'returned', 'expired'])
+            ->where(function($q) use ($merchantId) {
+                $q->where('rentals.merchant_id', $merchantId)
+                  ->orWhere('items.user_id', $merchantId);
+            })
+            ->sum('rentals.total_price');
+
+        // =========================================================================
+        // 2. GRAFIK 1: ITEM PALING POPULER
+        // =========================================================================
+        $daysFilter = $request->get('days', 30);
+        $popularItemsData = DB::table('rentals')
+            ->join('items', 'rentals.item_id', '=', 'items.id')
+            ->select('items.name', DB::raw('COUNT(rentals.id) as total_rented'))
+            ->where(function($q) use ($merchantId) {
+                $q->where('rentals.merchant_id', $merchantId)
+                  ->orWhere('items.user_id', $merchantId);
+            })
+            ->whereIn('rentals.status', ['approved', 'returned', 'expired'])
+            ->where('rentals.created_at', '>=', now()->subDays($daysFilter))
+            ->groupBy('items.id', 'items.name')
+            ->orderBy('total_rented', 'desc')
+            ->limit(5)
+            ->get();
+
+        $popularItemLabels = $popularItemsData->pluck('name')->toArray();
+        $popularItemValues = $popularItemsData->pluck('total_rented')->toArray();
+
+        // =========================================================================
+        // 3. GRAFIK 2: PENDAPATAN 6 BULAN TERAKHIR
+        // =========================================================================
+        $monthlyEarnings = [];
+        $monthlyLabels = [];
+        
+        for ($i = 5; $i >= 0; $i--) {
+            $monthDate = now()->subMonths($i);
+            $monthNum = $monthDate->month;
+            $yearNum = $monthDate->year;
+            $monthName = $monthDate->translatedFormat('M Y'); 
+            
+            $total = DB::table('rentals')
+                ->join('items', 'rentals.item_id', '=', 'items.id')
+                ->where(function($q) use ($merchantId) {
+                    $q->where('rentals.merchant_id', $merchantId)
+                      ->orWhere('items.user_id', $merchantId);
+                })
+                ->whereIn('rentals.status', ['approved', 'returned', 'expired'])
+                ->whereYear('rentals.created_at', $yearNum)
+                ->whereMonth('rentals.created_at', $monthNum)
+                ->sum('rentals.total_price');
+                
+            $monthlyLabels[] = $monthName;
+            $monthlyEarnings[] = (int) $total;
+        }
 
         // Ambil riwayat penyewaan terbaru khusus produk merchant ini
-        // FIX GAMBAR: Menambahkan items.image agar gambar produk muncul di halaman overview dashboard
         $recentRentals = DB::table('rentals')
             ->join('items', 'rentals.item_id', '=', 'items.id')
             ->select('rentals.*', 'items.name as item_name', 'items.image as item_image')
-            ->where('rentals.merchant_id', $merchantId)
+            ->where(function($q) use ($merchantId) {
+                $q->where('rentals.merchant_id', $merchantId)
+                  ->orWhere('items.user_id', $merchantId);
+            })
             ->orderBy('rentals.created_at', 'desc')
             ->limit(5)
             ->get();
 
-        return view('merchant.dashboard', compact('totalItems', 'totalRentals', 'recentRentals'));
+        return view('merchant.dashboard', compact(
+            'totalKategori', 'totalBarang', 'penyewaanAktif', 'totalPendapatan',
+            'popularItemLabels', 'popularItemValues', 'daysFilter',
+            'monthlyEarnings', 'monthlyLabels', 'recentRentals'
+        ));
     }
 
-    // 2. Data Penyewaan Khusus Merchant
+    // 2. Data Penyewaan Khusus Merchant (FIX SAKTI: DUKUNG DUA PENGECEKAN KEPEMILIKAN)
     public function rentals()
     {
         $merchantId = auth()->id();
@@ -41,60 +119,67 @@ class MerchantDashboardController extends Controller
         $rentals = DB::table('rentals')
             ->join('items', 'rentals.item_id', '=', 'items.id')
             ->select('rentals.*', 'items.name as item_name', 'items.image as item_image')
-            ->where('rentals.merchant_id', $merchantId)
+            ->where(function($q) use ($merchantId) {
+                $q->where('rentals.merchant_id', $merchantId)
+                  ->orWhere('items.user_id', $merchantId);
+            })
             ->orderBy('rentals.created_at', 'desc')
             ->get();
 
         return view('merchant.rentals_management', compact('rentals'));
     }
 
-    // ADDONS SAKTI: Fungsi Aksi Approve untuk Merchant
+    // Aksi Approve untuk Merchant
     public function approve($id)
     {
         $merchantId = auth()->id();
 
-        // 1. Ambil data rental terkait dan pastikan milik merchant ini
-        $rental = DB::table('rentals')->where('id', $id)->where('merchant_id', $merchantId)->first();
+        // Ambil data rental terkait dan pastikan milik merchant ini via rentals.merchant_id atau items.user_id
+        $rental = DB::table('rentals')
+            ->join('items', 'rentals.item_id', '=', 'items.id')
+            ->select('rentals.*', 'items.stock', 'items.rent_mode', 'items.name as item_name')
+            ->where('rentals.id', $id)
+            ->where(function($q) use ($merchantId) {
+                $q->where('rentals.merchant_id', $merchantId)
+                  ->orWhere('items.user_id', $merchantId);
+            })
+            ->first();
+
         if (!$rental) {
             return redirect()->back()->with('error', 'Data transaksi tidak ditemukan atau bukan milik unit Anda.');
         }
 
-        // 2. Ambil data item barang untuk cek ketersediaan stok
-        $item = DB::table('items')->where('id', $rental->item_id)->first();
-        if (!$item || $item->stock < 1) {
+        if ($rental->status !== 'pending') {
+            return redirect()->back()->with('error', 'Transaksi ini sudah pernah diproses sebelumnya!');
+        }
+
+        if ($rental->stock < 1) {
             return redirect()->back()->with('error', 'Gagal menyetujui, stok unit barang saat ini sudah habis!');
         }
 
-        // 3. Mulai kalkulasi waktu expired_at dinamis
         $now = Carbon::now();
         $duration = (int) $rental->duration;
 
-        if (isset($item->rent_mode) && $item->rent_mode === 'bulan') {
+        if (isset($rental->rent_mode) && $rental->rent_mode === 'bulan') {
             $expiredAt = $now->copy()->addMonths($duration);
         } else {
-            // otomatis expired dalam 2 menit mengikuti simulasi awal kelompok lu
-            $expiredAt = $now->copy()->addMinutes(2);
+            $expiredAt = $now->copy()->addDays($duration);
         }
 
-        // 4. Update status transaksi rentals dan suntikkan tanggal kedaluwarsanya
         DB::table('rentals')->where('id', $id)->update([
             'status' => 'approved',
             'expired_at' => $expiredAt,
             'updated_at' => $now
         ]);
 
-        // 5. Potong stok unit barang di database sebanyak 1
         DB::table('items')->where('id', $rental->item_id)->decrement('stock', 1);
-
-        // 6. Tambah hitungan total tersewa pada barang tersebut (+1)
         DB::table('items')->where('id', $rental->item_id)->increment('total_rented', 1);
 
-        // 7. Kirim data notifikasi ke database agar muncul di lonceng navbar milik customer
         DB::table('notifications')->insert([
             'user_id' => $rental->user_id,
             'item_id' => $rental->item_id,
             'title' => 'Pemesanan Disetujui! 🎉',
-            'message' => "Hore! Pengajuan sewa unit \"{$item->name}\" Anda telah disetujui oleh pemilik merchant. Silakan beri rating pengalaman Anda.",
+            'message' => "Hore! Pengajuan sewa unit \"{$rental->item_name}\" Anda telah disetujui oleh pemilik merchant. Silakan beri rating pengalaman Anda.",
             'is_read' => false,
             'is_rated' => false,
             'created_at' => $now,
@@ -104,14 +189,26 @@ class MerchantDashboardController extends Controller
         return redirect()->back()->with('success', 'Penyewaan unit sukses disetujui oleh Anda selaku pemilik barang, Bree!');
     }
 
-    // Fungsi Aksi Decline untuk Merchant
+    // Aksi Decline untuk Merchant
     public function decline($id)
     {
         $merchantId = auth()->id();
 
-        $rental = DB::table('rentals')->where('id', $id)->where('merchant_id', $merchantId)->first();
+        $rental = DB::table('rentals')
+            ->join('items', 'rentals.item_id', '=', 'items.id')
+            ->where('rentals.id', $id)
+            ->where(function($q) use ($merchantId) {
+                $q->where('rentals.merchant_id', $merchantId)
+                  ->orWhere('items.user_id', $merchantId);
+            })
+            ->first();
+
         if (!$rental) {
             return redirect()->back()->with('error', 'Data transaksi tidak ditemukan atau bukan milik unit Anda.');
+        }
+
+        if ($rental->status !== 'pending') {
+            return redirect()->back()->with('error', 'Transaksi ini sudah pernah diproses sebelumnya!');
         }
 
         DB::table('rentals')->where('id', $id)->update([
@@ -127,13 +224,27 @@ class MerchantDashboardController extends Controller
     {
         $merchantId = auth()->id();
 
-        // Pastikan rental tersebut memang milik unit barang milik merchant ini
-        $rental = DB::table('rentals')->where('id', $id)->where('merchant_id', $merchantId)->first();
+        $rental = DB::table('rentals')
+            ->join('items', 'rentals.item_id', '=', 'items.id')
+            ->where('rentals.id', $id)
+            ->where(function($q) use ($merchantId) {
+                $q->where('rentals.merchant_id', $merchantId)
+                  ->orWhere('items.user_id', $merchantId);
+            })
+            ->first();
+
         if (!$rental) {
             return redirect()->back()->with('error', 'Data penyewaan tidak ditemukan atau bukan milik Anda!');
         }
 
-        // Kembalikan jumlah stok barang (+1) ke merchant
+        if ($rental->status === 'returned') {
+            return redirect()->back()->with('error', 'Unit sudah dikonfirmasi selesai sebelumnya!');
+        }
+        
+        if ($rental->status !== 'approved' && $rental->status !== 'expired') {
+            return redirect()->back()->with('error', 'Transaksi belum disetujui atau tidak valid untuk dikembalikan!');
+        }
+
         DB::table('items')->where('id', $rental->item_id)->increment('stock', 1);
 
         DB::table('rentals')->where('id', $id)->update([
@@ -151,7 +262,7 @@ class MerchantDashboardController extends Controller
         
         $items = DB::table('items')
             ->join('categories', 'items.category_id', '=', 'categories.id')
-            ->where('items.user_id', $merchantId) // Kunci: Hanya barang milik merchant ini
+            ->where('items.user_id', $merchantId)
             ->select('items.*', 'categories.name as category_name')
             ->get();
 
@@ -163,7 +274,6 @@ class MerchantDashboardController extends Controller
     {
         $request->validate(['stock' => 'required|integer|min:0']);
 
-        // Pastikan barang tersebut milik merchant yang sedang login
         $item = DB::table('items')->where('id', $id)->where('user_id', auth()->id())->first();
         if (!$item) return redirect()->back()->with('error', 'Barang tidak ditemukan!');
 

@@ -31,8 +31,14 @@ class StockController extends Controller
             'stock' => 'required|integer|min:0',
         ]);
 
-        // PROTEKSI: Pastikan barang yang mau di-update stoknya memang milik admin yang login
-        $item = DB::table('items')->where('id', $id)->where('user_id', auth()->id())->first();
+        // PROTEKSI: Pastikan barang yang mau di-update stoknya memang milik admin yang login (atau barang global/default)
+        $item = DB::table('items')
+            ->where('id', $id)
+            ->where(function($query) {
+                $query->where('user_id', auth()->id())
+                      ->orWhereNull('user_id');
+            })->first();
+            
         if (!$item) {
             return redirect()->back()->with('error', 'Data barang tidak ditemukan atau bukan milik Anda!');
         }
@@ -51,8 +57,14 @@ class StockController extends Controller
     // 3. Fitur Menghapus Angka Stok (Reset Jadi 0)
     public function deleteStock($id)
     {
-        // PROTEKSI: Pastikan barang yang mau di-reset stoknya memang milik admin yang login
-        $item = DB::table('items')->where('id', $id)->where('user_id', auth()->id())->first();
+        // PROTEKSI: Pastikan barang yang mau di-reset stoknya memang milik admin yang login (atau barang global/default)
+        $item = DB::table('items')
+            ->where('id', $id)
+            ->where(function($query) {
+                $query->where('user_id', auth()->id())
+                      ->orWhereNull('user_id');
+            })->first();
+            
         if (!$item) {
             return redirect()->back()->with('error', 'Data barang tidak ditemukan atau bukan milik Anda!');
         }

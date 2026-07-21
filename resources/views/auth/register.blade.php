@@ -9,7 +9,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    @vite('resources/css/app.css')
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- DYNAMIC FAVICON -->
+    @if(isset($configs['app_logo']) && !empty($configs['app_logo']))
+        <link rel="icon" href="{{ asset('storage/' . $configs['app_logo']) }}" type="image/x-icon">
+    @else
+        <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
+    @endif
 </head>
 <body class="bg-slate-950 text-white min-h-screen font-sans overflow-x-hidden" style="font-family: 'Poppins', sans-serif;">
 

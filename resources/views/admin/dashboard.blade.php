@@ -3,7 +3,8 @@
 @section('content')
 <div class="space-y-8">
     
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <!-- STATISTIK METRIK CARD (GRID 5 COLUMNS) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm hover:border-slate-300 transition duration-150">
             <div class="flex justify-between items-start">
                 <div>
@@ -55,10 +56,25 @@
                 <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Akumulasi Finansial</span>
             </div>
         </div>
+
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm hover:border-slate-300 transition duration-150">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Merchant</p>
+                    <h3 class="text-2xl font-extrabold text-slate-900 mt-1">{{ $totalMerchant ?? 0 }}</h3>
+                </div>
+                <div class="w-7 h-7 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center text-xs text-slate-400">🏪</div>
+            </div>
+            <div class="flex items-center gap-1.5 mt-4">
+                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Merchant Aktif</span>
+            </div>
+        </div>
     </div>
 
+    <!-- AREA GRAFIK ANALITIK -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
+        <!-- GRAFIK 1: ITEM TERPOPULER -->
         <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
             <div class="flex items-center justify-between mb-4">
                 <div>
@@ -66,13 +82,16 @@
                     <p class="text-[11px] text-slate-400 font-medium mt-0.5">Item yang paling sering disewa pelanggan.</p>
                 </div>
                 <form method="GET" action="{{ route('admin.dashboard') }}" id="formDays">
-                    <input type="hidden" name="year" value="{{ $yearFilter }}">
+                    <!-- HIDDEN YEAR DIPERBAIKI / DIHAPUS SUPAYA TIDAK BIKIN EROR -->
+                    @if(isset($yearFilter))
+                        <input type="hidden" name="year" value="{{ $yearFilter }}">
+                    @endif
                     <select name="days" onchange="document.getElementById('formDays').submit()" class="text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-slate-300 cursor-pointer">
-                        <option value="30" {{ $daysFilter == 30 ? 'selected' : '' }}>30 Hari Terakhir</option>
-                        <option value="60" {{ $daysFilter == 60 ? 'selected' : '' }}>60 Hari Terakhir</option>
-                        <option value="90" {{ $daysFilter == 90 ? 'selected' : '' }}>90 Hari Terakhir</option>
-                        <option value="180" {{ $daysFilter == 180 ? 'selected' : '' }}>180 Hari Terakhir</option>
-                        <option value="360" {{ $daysFilter == 360 ? 'selected' : '' }}>360 Hari Terakhir</option>
+                        <option value="30" {{ ($daysFilter ?? 30) == 30 ? 'selected' : '' }}>30 Hari Terakhir</option>
+                        <option value="60" {{ ($daysFilter ?? 30) == 60 ? 'selected' : '' }}>60 Hari Terakhir</option>
+                        <option value="90" {{ ($daysFilter ?? 30) == 90 ? 'selected' : '' }}>90 Hari Terakhir</option>
+                        <option value="180" {{ ($daysFilter ?? 30) == 180 ? 'selected' : '' }}>180 Hari Terakhir</option>
+                        <option value="360" {{ ($daysFilter ?? 30) == 360 ? 'selected' : '' }}>360 Hari Terakhir</option>
                     </select>
                 </form>
             </div>
@@ -81,20 +100,13 @@
             </div>
         </div>
 
+        <!-- GRAFIK 2: TREN PENDAPATAN -->
         <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider">Tren Pendapatan</h3>
                     <p class="text-[11px] text-slate-400 font-medium mt-0.5">Grafik total nominal pendapatan bulanan masuk.</p>
                 </div>
-                <form method="GET" action="{{ route('admin.dashboard') }}" id="formYear">
-                    <input type="hidden" name="days" value="{{ $daysFilter }}">
-                    <select name="year" onchange="document.getElementById('formYear').submit()" class="text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-slate-300 cursor-pointer">
-                        @foreach($availableYears as $yr)
-                            <option value="{{ $yr }}" {{ $yearFilter == $yr ? 'selected' : '' }}>Tahun {{ $yr }}</option>
-                        @endforeach
-                    </select>
-                </form>
             </div>
             <div class="relative h-64 w-full">
                 <canvas id="monthlyEarningsChart"></canvas>
@@ -113,17 +125,17 @@
     new Chart(ctxItems, {
         type: 'bar',
         data: {
-            labels: {!! json_encode($popularItemLabels) !!},
+            labels: {!! json_encode($popularItemLabels ?? []) !!},
             datasets: [{
                 label: 'Jumlah Transaksi Sewa',
-                data: {!! json_encode($popularItemValues) !!},
-                backgroundColor: 'rgba(99, 102, 241, 0.8)', // Indigo Slate
+                data: {!! json_encode($popularItemValues ?? []) !!},
+                backgroundColor: 'rgba(99, 102, 241, 0.8)',
                 borderRadius: 6,
                 borderWidth: 0
             }]
         },
         options: {
-            indexAxis: 'y', // Membuat bar chart jadi horizontal biar teks nama item panjang tetap rapi
+            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
@@ -140,18 +152,21 @@
     // RENDER GRAFIK 2: TREN PENDAPATAN BULANAN (LINE CHART ELEGAN)
     // ---------------------------------------------------------
     const ctxEarnings = document.getElementById('monthlyEarningsChart').getContext('2d');
+    const defaultMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const earningsLabels = {!! json_encode($monthlyLabels ?? null) !!} || defaultMonths;
+
     new Chart(ctxEarnings, {
         type: 'line',
         data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+            labels: earningsLabels,
             datasets: [{
                 label: 'Pendapatan (Rp)',
-                data: {!! json_encode($monthlyEarnings) !!},
-                borderColor: 'rgba(37, 99, 235, 1)', // Blue-600
+                data: {!! json_encode($monthlyEarnings ?? []) !!},
+                borderColor: 'rgba(37, 99, 235, 1)',
                 backgroundColor: 'rgba(37, 99, 235, 0.05)',
                 borderWidth: 3,
                 fill: true,
-                tension: 0.3, // Efek garis melengkung smooth halus
+                tension: 0.3,
                 pointRadius: 4,
                 pointBackgroundColor: 'rgba(37, 99, 235, 1)'
             }]

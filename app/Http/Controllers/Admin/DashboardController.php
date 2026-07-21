@@ -23,6 +23,8 @@ class DashboardController extends Controller
         $totalPendapatan = DB::table('rentals')
             ->where('status', 'approved')
             ->sum('total_price');
+            
+        $totalMerchant = DB::table('users')->where('role', 'merchant')->count();
 
         // =========================================================================
         // 2. GRAFIK 1: ITEM PALING POPULER (30, 60, 90, 180, 360 Hari)
@@ -44,48 +46,33 @@ class DashboardController extends Controller
         $popularItemValues = $popularItemsData->pluck('total_rented')->toArray();
 
         // =========================================================================
-        // 3. GRAFIK 2: PENDAPATAN BULANAN PER TAHUN DINAMIS
+        // 3. GRAFIK 2: PENDAPATAN 6 BULAN TERAKHIR
         // =========================================================================
-        // Cari daftar tahun unik yang pernah ada transaksi disetujui di DB
-        $availableYears = DB::table('rentals')
-            ->where('status', 'approved')
-            ->select(DB::raw('YEAR(created_at) as year'))
-            ->groupBy('year')
-            ->orderBy('year', 'desc')
-            ->pluck('year')
-            ->toArray();
         
-        // Jika DB baru pertama running & masih kosong, buat fallback tahun berjalan
-        if (empty($availableYears)) {
-            $availableYears = [date('Y')];
-        }
-
-        // Ambil input filter tahun berjalan (Default tahun sekarang)
-        $yearFilter = $request->get('year', date('Y'));
-
-        // FIX SAKTI: Kalkulasi total bulanan berdasarkan kolom total_price (Setelah potongan diskon)
-        $monthlyEarningsData = DB::table('rentals')
-            ->select(
-                DB::raw('MONTH(created_at) as month'),
-                DB::raw('SUM(total_price) as total')
-            )
-            ->where('status', 'approved')
-            ->whereYear('created_at', $yearFilter)
-            ->groupBy(DB::raw('MONTH(created_at)'))
-            ->pluck('total', 'month')
-            ->toArray();
-
-        // Mapping index array 1-12 (Jan-Des) agar tidak ada bulan melompat di Chart.js
         $monthlyEarnings = [];
-        for ($m = 1; $m <= 12; $m++) {
-            $monthlyEarnings[] = $monthlyEarningsData[$m] ?? 0;
+        $monthlyLabels = [];
+        
+        for ($i = 5; $i >= 0; $i--) {
+            $monthDate = now()->subMonths($i);
+            $monthNum = $monthDate->month;
+            $yearNum = $monthDate->year;
+            $monthName = $monthDate->translatedFormat('M Y'); 
+            
+            $total = DB::table('rentals')
+                ->where('status', 'approved')
+                ->whereYear('created_at', $yearNum)
+                ->whereMonth('created_at', $monthNum)
+                ->sum('total_price');
+                
+            $monthlyLabels[] = $monthName;
+            $monthlyEarnings[] = (int) $total;
         }
 
         // Kirim seluruh payload variabel ke view dashboard admin
         return view('admin.dashboard', compact(
-            'totalKategori', 'totalBarang', 'penyewaanAktif', 'totalPendapatan',
+            'totalKategori', 'totalBarang', 'penyewaanAktif', 'totalPendapatan', 'totalMerchant',
             'popularItemLabels', 'popularItemValues', 'daysFilter',
-            'monthlyEarnings', 'availableYears', 'yearFilter'
+            'monthlyEarnings', 'monthlyLabels'
         ));
     }
 
@@ -140,7 +127,6 @@ class DashboardController extends Controller
             $logoPath = $request->file('app_logo')->store('cms', 'public');
 
             // Masukkan path logo baru ke database cms_configs
-            $logoPath = $request->file('app_logo')->store('cms', 'public');
             DB::table('cms_configs')->updateOrInsert(
                 ['key' => 'app_logo'],
                 ['value' => $logoPath]

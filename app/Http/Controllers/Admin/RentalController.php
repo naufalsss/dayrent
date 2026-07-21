@@ -129,6 +129,11 @@ class RentalController extends Controller
             return redirect()->back()->with('error', 'Gagal! Anda tidak memiliki hak akses mengelola pesanan unit barang ini.');
         }
 
+        // FIX PROTEKSI GANDA: Pastikan transaksi masih berstatus 'pending' untuk menghindari pemotongan stok ganda
+        if ($rental->status !== 'pending') {
+            return redirect()->back()->with('error', 'Transaksi ini sudah diproses sebelumnya!');
+        }
+
         // 2. Ambil data item barang untuk cek ketersediaan stok dan rent_mode-nya
         $item = DB::table('items')->where('id', $rental->item_id)->first();
         if (!$item || $item->stock < 1) {
@@ -219,6 +224,11 @@ class RentalController extends Controller
         // FIX HAK AKSES UTAMA
         if (auth()->user()->role !== 'admin' && auth()->id() !== $rental->merchant_id) {
             return redirect()->back()->with('error', 'Gagal! Anda tidak memiliki hak akses mengelola pesanan unit barang ini.');
+        }
+
+        // FIX PROTEKSI GANDA: Pastikan transaksi masih berstatus 'pending'
+        if ($rental->status !== 'pending') {
+            return redirect()->back()->with('error', 'Hanya transaksi tertunda yang dapat ditolak!');
         }
 
         DB::table('rentals')->where('id', $id)->update([

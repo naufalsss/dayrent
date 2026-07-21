@@ -72,6 +72,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Jalur pengiriman bintang rating dari pop-up user
     Route::post('/notifications/{id}/rate', [App\Http\Controllers\NotificationController::class, 'submitRating'])->name('notifications.rate');
+    
+    // Jalur menutup / abaikan notifikasi rating
+    Route::post('/notifications/{id}/dismiss', [App\Http\Controllers\NotificationController::class, 'dismissRating'])->name('notifications.dismiss');
 
     Route::get('/order-details/{id}', function ($id) {
         $order = DB::table('rentals')

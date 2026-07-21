@@ -18,6 +18,15 @@
         .input-checkout { background-color: #f8fafc !important; border: 1px solid #cbd5e1 !important; color: #0f172a !important; }
         .input-checkout:focus { border-color: #1e3a8a !important; background-color: #ffffff !important; outline: none; box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1); }
     </style>
+    
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- DYNAMIC FAVICON -->
+    @if(isset($configs['app_logo']) && !empty($configs['app_logo']))
+        <link rel="icon" href="{{ asset('storage/' . $configs['app_logo']) }}" type="image/x-icon">
+    @else
+        <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
+    @endif
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen relative">
 
@@ -39,7 +48,7 @@
                         {{ substr($configs['app_name'] ?? 'D', 0, 1) }}
                     @endif
                 </div>
-                <span class="font-extrabold text-xl tracking-wider text-white">{{ $configs['app_name'] ?? 'DAY-RENT' }}</span>
+                <span class="font-extrabold text-sm md:text-base tracking-wider text-white">{{ $configs['app_name'] ?? 'DAY-RENT' }}</span>
             </div>
 
             <div class="hidden md:flex items-center gap-8 font-medium">
@@ -118,15 +127,20 @@
                         </div>
                     </div>
                 @else
-                    <a href="/login" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-md font-semibold shadow-md shadow-blue-600/30 transition duration-200 text-sm">Masuk Akun</a>
+                    <a href="/login" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-md font-semibold shadow-md shadow-blue-600/30 transition duration-200 text-sm hidden md:block">Masuk Akun</a>
                 @endauth
+                
+                <!-- Hamburger Menu Button -->
+                <button id="mobileMenuBtn" class="md:hidden text-white hover:text-blue-400 focus:outline-none transition cursor-pointer">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
             </div>
         </nav>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
             <div class="lg:col-span-5 space-y-6">
-                <div class="w-full aspect-square bg-slate-200 rounded-3xl overflow-hidden border border-slate-200 shadow-md">
+                <div class="w-full aspect-video lg:aspect-[4/3] bg-slate-200 rounded-3xl overflow-hidden border border-slate-200 shadow-md">
                     <!-- FIX LOGIC BREE: Pengecekan cerdas string letak penyimpanan gambar -->
                     <img src="{{ (str_starts_with($item->image, '/storage/') || str_starts_with($item->image, 'storage/')) ? asset(ltrim($item->image, '/')) : asset('storage/' . $item->image) }}" 
                          alt="{{ $item->name }}" 
@@ -141,10 +155,13 @@
 
                     <div class="space-y-2">
                         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Deskripsi Unit</h4>
-                        <p class="text-sm text-slate-600 leading-relaxed">
-                            Unit {{ $item->name }} dalam kondisi prima, bersih, dan siap pakai untuk menunjang kebutuhan harian Anda. 
-                            Dilengkapi dengan fitur utama: <span class="text-blue-600 font-semibold">{{ str_replace(',', ' • ', $item->features) }}</span>.
-                        </p>
+                        <div class="relative">
+                            <p id="descText" class="text-sm text-slate-600 leading-relaxed line-clamp-3 transition-all duration-300">
+                                Unit {{ $item->name }} dalam kondisi baik, dan siap untuk menunjang kebutuhan harian Anda. 
+                                Dilengkapi dengan fitur utama: <span class="text-blue-600 font-semibold">{{ str_replace(',', ' • ', $item->features) }}</span>.
+                            </p>
+                            <button type="button" onclick="toggleDescription()" id="readMoreBtn" class="text-xs font-bold text-blue-600 hover:text-blue-700 mt-1 cursor-pointer">Lihat Selengkapnya..</button>
+                        </div>
                     </div>
 
                     <div class="p-4 rounded-2xl bg-blue-50 border border-blue-100 flex gap-3 items-start">
@@ -425,6 +442,68 @@
                 showToast(errorText, 'error');
             });
         });
+
+        // ==========================================
+        // TOGGLE DESCRIPTION (READ MORE)
+        // ==========================================
+        function toggleDescription() {
+            const desc = document.getElementById('descText');
+            const btn = document.getElementById('readMoreBtn');
+            
+            if (desc.classList.contains('line-clamp-3')) {
+                desc.classList.remove('line-clamp-3');
+                btn.innerText = 'Tutup.';
+            } else {
+                desc.classList.add('line-clamp-3');
+                btn.innerText = 'Lihat Selengkapnya..';
+            }
+        }
+
+        // ==========================================
+        // MOBILE HAMBURGER JAVASCRIPT LOGIC
+        // ==========================================
+        document.addEventListener("DOMContentLoaded", function() {
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+            const mobileDrawer = document.getElementById('mobileDrawer');
+
+            if(mobileMenuBtn && closeDrawerBtn && mobileDrawer) {
+                mobileMenuBtn.addEventListener('click', () => {
+                    mobileDrawer.classList.remove('-translate-y-full');
+                });
+                closeDrawerBtn.addEventListener('click', () => {
+                    mobileDrawer.classList.add('-translate-y-full');
+                });
+            }
+        });
     </script>
+
+    <!-- MOBILE DRAWER MENU -->
+    <div id="mobileDrawer" class="fixed inset-x-0 top-0 z-[100] bg-slate-950/98 backdrop-blur-2xl border-b border-white/10 p-6 transform -translate-y-full transition-transform duration-300 shadow-2xl md:hidden">
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center font-bold text-white text-lg overflow-hidden p-0.5">
+                    @if(!empty($configs['app_logo']))
+                        <img src="{{ asset('storage/' . $configs['app_logo']) }}" class="w-full h-full object-contain rounded-full">
+                    @else
+                        {{ substr($configs['app_name'] ?? 'D', 0, 1) }}
+                    @endif
+                </div>
+                <span class="font-extrabold text-sm md:text-base tracking-wider text-white">{{ $configs['app_name'] ?? 'DAY-RENT' }}</span>
+            </div>
+            <button id="closeDrawerBtn" class="text-white hover:text-rose-400 focus:outline-none transition cursor-pointer">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="flex flex-col gap-5 font-semibold text-lg">
+            <a href="/" class="text-slate-300 hover:text-white pb-2 border-b border-white/10 transition">Beranda</a>
+            <a href="/catalog" class="text-slate-300 hover:text-white transition pb-2 border-b border-white/10">Katalog</a>
+            <a href="/guide" class="text-slate-300 hover:text-white transition pb-2 border-b border-white/10">Panduan</a>
+            <a href="/help" class="text-slate-300 hover:text-white transition pb-2 border-b border-white/10">Bantuan</a>
+            @guest
+                <a href="/login" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-md font-bold text-center mt-4 tracking-wider uppercase text-sm">Masuk Akun</a>
+            @endguest
+        </div>
+    </div>
 </body>
 </html>

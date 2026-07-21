@@ -14,20 +14,93 @@
         </div>
 
         <!-- STATISTIK KARTU RINGKAS -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-xl text-emerald-600 font-bold">📦</div>
-                <div>
-                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Unit Barang Saya</p>
-                    <h3 class="text-2xl font-black text-slate-800 mt-0.5">{{ $totalItems }} <span class="text-xs font-bold text-slate-400">Unit</span></h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm hover:border-slate-300 transition duration-150">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kategori Unit</p>
+                        <h3 class="text-2xl font-extrabold text-slate-900 mt-1">{{ $totalKategori ?? 0 }}</h3>
+                    </div>
+                    <div class="w-7 h-7 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center text-xs text-slate-400">📁</div>
+                </div>
+                <div class="flex items-center gap-1.5 mt-4">
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Kategori Terdaftar</span>
                 </div>
             </div>
 
-            <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-xl text-blue-600 font-bold">📝</div>
-                <div>
-                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Transaksi Sewa</p>
-                    <h3 class="text-2xl font-black text-slate-800 mt-0.5">{{ $totalRentals }} <span class="text-xs font-bold text-slate-400">Kali</span></h3>
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm hover:border-slate-300 transition duration-150">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Unit Barang Saya</p>
+                        <h3 class="text-2xl font-extrabold text-slate-900 mt-1">{{ $totalBarang ?? 0 }}</h3>
+                    </div>
+                    <div class="w-7 h-7 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center text-xs text-slate-400">📦</div>
+                </div>
+                <div class="flex items-center gap-1.5 mt-4">
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Unit Siap Sewa</span>
+                </div>
+            </div>
+
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm hover:border-slate-300 transition duration-150">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Penyewaan Aktif</p>
+                        <h3 class="text-2xl font-extrabold text-slate-900 mt-1">{{ $penyewaanAktif ?? 0 }}</h3>
+                    </div>
+                    <div class="w-7 h-7 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center text-xs text-slate-400">⚡</div>
+                </div>
+                <div class="flex items-center gap-1.5 mt-4">
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Rental Berjalan</span>
+                </div>
+            </div>
+
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm hover:border-slate-300 transition duration-150">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pendapatan Bersih</p>
+                        <h3 class="text-2xl font-extrabold text-emerald-600 mt-1">Rp {{ number_format($totalPendapatan ?? 0, 0, ',', '.') }}</h3>
+                    </div>
+                    <div class="w-7 h-7 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center text-xs text-slate-400">💰</div>
+                </div>
+                <div class="flex items-center gap-1.5 mt-4">
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Akumulasi Finansial</span>
+                </div>
+            </div>
+        </div>
+
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider">Item Terpopuler</h3>
+                        <p class="text-[11px] text-slate-400 font-medium mt-0.5">Item Anda yang paling sering disewa.</p>
+                    </div>
+                    <form method="GET" action="{{ route('merchant.dashboard') }}" id="formDays">
+                        <select name="days" onchange="document.getElementById('formDays').submit()" class="text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-slate-300 cursor-pointer">
+                            <option value="30" {{ $daysFilter == 30 ? 'selected' : '' }}>30 Hari Terakhir</option>
+                            <option value="60" {{ $daysFilter == 60 ? 'selected' : '' }}>60 Hari Terakhir</option>
+                            <option value="90" {{ $daysFilter == 90 ? 'selected' : '' }}>90 Hari Terakhir</option>
+                            <option value="180" {{ $daysFilter == 180 ? 'selected' : '' }}>180 Hari Terakhir</option>
+                            <option value="360" {{ $daysFilter == 360 ? 'selected' : '' }}>360 Hari Terakhir</option>
+                        </select>
+                    </form>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="popularItemsChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider">Tren Pendapatan</h3>
+                        <p class="text-[11px] text-slate-400 font-medium mt-0.5">Pendapatan bersih 6 bulan terakhir.</p>
+                    </div>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="monthlyEarningsChart"></canvas>
                 </div>
             </div>
         </div>
@@ -87,4 +160,68 @@
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctxItems = document.getElementById('popularItemsChart').getContext('2d');
+        new Chart(ctxItems, {
+            type: 'bar',
+            data: {
+                labels: {!! json_encode($popularItemLabels) !!},
+                datasets: [{
+                    label: 'Jumlah Transaksi Sewa',
+                    data: {!! json_encode($popularItemValues) !!},
+                    backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                    borderRadius: 6,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { ticks: { stepSize: 1, font: { size: 10 } }, grid: { display: false } },
+                    y: { ticks: { font: { size: 11, weight: 'bold' } } }
+                }
+            }
+        });
+
+        const ctxEarnings = document.getElementById('monthlyEarningsChart').getContext('2d');
+        new Chart(ctxEarnings, {
+            type: 'line',
+            data: {
+                labels: {!! json_encode($monthlyLabels) !!},
+                datasets: [{
+                    label: 'Pendapatan (Rp)',
+                    data: {!! json_encode($monthlyEarnings) !!},
+                    borderColor: 'rgba(16, 185, 129, 1)', // Emerald-500
+                    backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 4,
+                    pointBackgroundColor: 'rgba(16, 185, 129, 1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { borderDash: [5, 5], color: '#f1f5f9' },
+                        ticks: { font: { size: 10 }, callback: function(value) { return 'Rp ' + (value/1000) + 'k'; } }
+                    }
+                }
+            }
+        });
+    </script>
 @endsection

@@ -28,6 +28,12 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // JIKA ADMIN, LANGSUNG ARAHKAN KE DASHBOARD ADMIN
+        if (Auth::user()->role === 'admin') {
+            return redirect()->route('admin.rentals.index');
+        }
+
+        // MERCHANT & USER BIASA: TETAP MENGGUNAKAN ALUR DEFAULT LU
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
